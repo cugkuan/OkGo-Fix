@@ -9,7 +9,7 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
-    implementation project(':okgo')
+    implementation 'com.qizhidao.clientapp.library:okgo:1.0.1'
     implementation 'com.squareup.okhttp3:okhttp:3.12.0'
 }
 uploadArchives {
@@ -21,7 +21,6 @@ uploadArchives {
         pom.artifactId = PROJ_ARTIFACTID
         pom.version = PROJ_VERSION
     }
-
     // 生成sources.jar
     task androidSourcesJar(type: Jar) {
         classifier = 'sources'
