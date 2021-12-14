@@ -249,7 +249,8 @@ public class DownloadTask implements Runnable {
                 request.headers(HttpHeaders.HEAD_KEY_RANGE, "bytes=" + startPosition + "-");
             }
             response = request.execute();
-        } catch (IOException e) {
+        } catch (IllegalArgumentException|IOException e) {
+            // 新增 对 非 https 和 http 协议地址，抛出IllegalArgumentException
             postOnError(progress, e);
             return;
         }
