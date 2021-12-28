@@ -290,6 +290,10 @@ public class DownloadTask implements Runnable {
         if (progress.totalSize == -1) {
             progress.totalSize = body.contentLength();
         }
+        // 针对服务器 body.contentLength = -1 的情况定制
+        if (progress.totalSize == -1){
+            progress.totalSize = Long.MAX_VALUE;
+        }
         //create filename
         String fileName = progress.fileName;
         if (TextUtils.isEmpty(fileName)) {
@@ -371,7 +375,10 @@ public class DownloadTask implements Runnable {
         try {
             while ((len = in.read(buffer, 0, BUFFER_SIZE)) != -1 && progress.status == Progress.LOADING) {
                 out.write(buffer, 0, len);
-                Progress.changeProgress(progress, len, progress.totalSize, progress1 -> postLoading(progress1));
+                Progress.changeProgress(progress, len, progress.totalSize, this::postLoading);
+            }
+            if (progress.totalSize == Long.MAX_VALUE){
+                progress.totalSize = progress.currentSize;
             }
         } finally {
             IOUtils.closeQuietly(out);
