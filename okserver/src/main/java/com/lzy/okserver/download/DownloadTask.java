@@ -166,6 +166,9 @@ public class DownloadTask implements Runnable {
                 postOnError(progress, new StorageException("the file of the task with tag:" + progress.tag + " may be invalid or damaged, please call the method restart() to download again！"));
             } else {
                 File file = new File(progress.filePath);
+                if (!file.exists() && !TextUtils.isEmpty(progress.fileSuffix)) {
+                    file = new File(file.getParent(), progress.fileName+ progress.fileSuffix);
+                }
                 if (file.exists() && file.length() == progress.totalSize) {
                     postOnFinish(progress, new File(progress.filePath));
                 } else {
@@ -222,6 +225,7 @@ public class DownloadTask implements Runnable {
         return task;
     }
 
+
     @Override
     public void run() {
         //check breakpoint
@@ -244,12 +248,12 @@ public class DownloadTask implements Runnable {
         try {
             Request<?, ? extends Request> request = progress.request;
             //断点续传的条件设置
-            if (progress.extra1 != null  && startPosition > 0) {
+            if (progress.extra1 != null && startPosition > 0) {
                 request.headers(HttpHeaders.HEAD_KEY_IF_RANGE, progress.extra1.toString());
                 request.headers(HttpHeaders.HEAD_KEY_RANGE, "bytes=" + startPosition + "-");
             }
             response = request.execute();
-        } catch (IllegalArgumentException|IOException e) {
+        } catch (IllegalArgumentException | IOException e) {
             // 新增 对 非 https 和 http 协议地址，抛出IllegalArgumentException
             postOnError(progress, e);
             return;
@@ -260,12 +264,12 @@ public class DownloadTask implements Runnable {
             postOnError(progress, HttpException.NET_ERROR());
             return;
         }
-        if (code == 416){
+        if (code == 416) {
             //表示请求的文件范围不合法，暂时处理为重新下载整个文件
             progress.extra1 = null;
             progress.fraction = 0;
             progress.currentSize = 0;
-            postOnError(progress,HttpException.COMMON("文件过期，需要重新下载"));
+            postOnError(progress, HttpException.COMMON("文件过期，需要重新下载"));
             return;
         }
         //文件修改的标志位，优先使用 etag
@@ -291,7 +295,7 @@ public class DownloadTask implements Runnable {
             progress.totalSize = body.contentLength();
         }
         // 针对服务器 body.contentLength = -1 的情况定制
-        if (progress.totalSize == -1){
+        if (progress.totalSize == -1) {
             progress.totalSize = Long.MAX_VALUE;
         }
         //create filename
@@ -377,7 +381,7 @@ public class DownloadTask implements Runnable {
                 out.write(buffer, 0, len);
                 Progress.changeProgress(progress, len, progress.totalSize, this::postLoading);
             }
-            if (progress.totalSize == Long.MAX_VALUE){
+            if (progress.totalSize == Long.MAX_VALUE) {
                 progress.totalSize = progress.currentSize;
             }
         } finally {

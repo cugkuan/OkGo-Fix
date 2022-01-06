@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_CACHE_NAME = "okgo.db";
-    private static final int DB_CACHE_VERSION = 1;
+    private static final int DB_CACHE_VERSION = 2;
     static final String TABLE_CACHE = "cache";
     static final String TABLE_COOKIE = "cookie";
     static final String TABLE_DOWNLOAD = "download";
@@ -58,7 +58,6 @@ class DBHelper extends SQLiteOpenHelper {
 
     DBHelper(Context context) {
         super(context, DB_CACHE_NAME, null, DB_CACHE_VERSION);
-
         cacheTableEntity.addColumn(new ColumnEntity(CacheEntity.KEY, "VARCHAR", true, true))//
                 .addColumn(new ColumnEntity(CacheEntity.LOCAL_EXPIRE, "INTEGER"))//
                 .addColumn(new ColumnEntity(CacheEntity.HEAD, "BLOB"))//
@@ -84,7 +83,8 @@ class DBHelper extends SQLiteOpenHelper {
                 .addColumn(new ColumnEntity(Progress.REQUEST, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA1, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA2, "BLOB"))//
-                .addColumn(new ColumnEntity(Progress.EXTRA3, "BLOB"));
+                .addColumn(new ColumnEntity(Progress.EXTRA3, "BLOB"))
+                .addColumn(new ColumnEntity(Progress.FILE_SUFFIX, "VARCHAR"));
 
         uploadTableEntity.addColumn(new ColumnEntity(Progress.TAG, "VARCHAR", true, true))//
                 .addColumn(new ColumnEntity(Progress.URL, "VARCHAR"))//
@@ -100,7 +100,8 @@ class DBHelper extends SQLiteOpenHelper {
                 .addColumn(new ColumnEntity(Progress.REQUEST, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA1, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA2, "BLOB"))//
-                .addColumn(new ColumnEntity(Progress.EXTRA3, "BLOB"));
+                .addColumn(new ColumnEntity(Progress.EXTRA3, "BLOB"))
+                .addColumn(new ColumnEntity(Progress.FILE_SUFFIX, "VARCHAR"));
     }
 
     @Override
@@ -113,11 +114,26 @@ class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (DBUtils.isNeedUpgradeTable(db, cacheTableEntity)) db.execSQL("DROP TABLE IF EXISTS " + TABLE_CACHE);
-        if (DBUtils.isNeedUpgradeTable(db, cookieTableEntity)) db.execSQL("DROP TABLE IF EXISTS " + TABLE_COOKIE);
-        if (DBUtils.isNeedUpgradeTable(db, downloadTableEntity)) db.execSQL("DROP TABLE IF EXISTS " + TABLE_DOWNLOAD);
-        if (DBUtils.isNeedUpgradeTable(db, uploadTableEntity)) db.execSQL("DROP TABLE IF EXISTS " + TABLE_UPLOAD);
-        onCreate(db);
+
+        // progress 新增了一个字段,file_suffix
+        if (newVersion == 2 && oldVersion == 1) {
+            String sqlDownload = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_DOWNLOAD,Progress.FILE_SUFFIX);
+            db.execSQL(sqlDownload);
+            String sqlUpload = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_UPLOAD,Progress.FILE_SUFFIX);
+            db.execSQL(sqlUpload);
+        }else {
+            if (DBUtils.isNeedUpgradeTable(db, cacheTableEntity))
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_CACHE);
+            if (DBUtils.isNeedUpgradeTable(db, cookieTableEntity))
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_COOKIE);
+            if (DBUtils.isNeedUpgradeTable(db, downloadTableEntity))
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_DOWNLOAD);
+            if (DBUtils.isNeedUpgradeTable(db, uploadTableEntity))
+                db.execSQL("DROP TABLE IF EXISTS " + TABLE_UPLOAD);
+            onCreate(db);
+
+        }
+
     }
 
     @Override

@@ -20,6 +20,7 @@ import android.database.Cursor;
 import android.os.SystemClock;
 
 import com.lzy.okgo.OkGo;
+import com.lzy.okgo.db.DownloadManager;
 import com.lzy.okgo.request.base.Request;
 import com.lzy.okgo.utils.IOUtils;
 
@@ -35,11 +36,11 @@ import java.util.List;
  * 描    述：
  * 修订历史：
  * ================================================
- *
+ * <p>
  * 2021-4-24
  * 修复原来的库中的问题
  * Attempt to invoke virtual method 'long java.lang.Long.longValue()' on a null object reference
- *
+ * <p>
  * com.lzy.okgo.model.Progress.bufferSpeed(Progress.java:4)
  */
 public class Progress implements Serializable {
@@ -67,6 +68,7 @@ public class Progress implements Serializable {
     public static final String EXTRA1 = "extra1";
     public static final String EXTRA2 = "extra2";
     public static final String EXTRA3 = "extra3";
+    public static final String FILE_SUFFIX = "fileSuffix";
 
     public String tag;                              //下载的标识键
     public String url;                              //网址
@@ -84,16 +86,15 @@ public class Progress implements Serializable {
     public Serializable extra1;                     //额外的数据
     public Serializable extra2;                     //额外的数据
     public Serializable extra3;                     //额外的数据
-    public Throwable exception;                     //当前进度出现的异常
+    public String fileSuffix;                       // 文件的后缀名字，下载的文件可能和使用的文件名字不一样，使用的文件，需要文件名+后缀
 
+    public Throwable exception;                     //当前进度出现的异常
     private transient long tempSize;                //每一小段时间间隔的网络流量
     private transient long lastRefreshTime;         //最后一次刷新的时间
     //private transient List<Long> speedBuffer;       //网速做平滑的缓存，避免抖动过快
-
-
     public static final int SPEED_BUFFER_SIZE = 10;
     /**
-     *  使用循环
+     * 使用循环
      */
     private transient long[] speedBuffer;
     private int bufferSize = 0;
@@ -105,7 +106,7 @@ public class Progress implements Serializable {
         totalSize = -1;
         priority = Priority.DEFAULT;
         date = System.currentTimeMillis();
-        speedBuffer  = new long[SPEED_BUFFER_SIZE];
+        speedBuffer = new long[SPEED_BUFFER_SIZE];
         bufferIndex = 0;
         bufferSize = 0;
     }
@@ -135,12 +136,14 @@ public class Progress implements Serializable {
         return progress;
     }
 
-    /** 平滑网速，避免抖动过大 */
+    /**
+     * 平滑网速，避免抖动过大
+     */
     private long bufferSpeed(long speed) {
 
         speedBuffer[bufferIndex] = speed;
         bufferIndex++;
-        if (bufferIndex >= SPEED_BUFFER_SIZE ){
+        if (bufferIndex >= SPEED_BUFFER_SIZE) {
             bufferIndex = 0;
         }
         if (bufferSize < SPEED_BUFFER_SIZE) {
@@ -154,7 +157,9 @@ public class Progress implements Serializable {
         return sum / bufferSize;
     }
 
-    /** 转换进度信息 */
+    /**
+     * 转换进度信息
+     */
     public void from(Progress progress) {
         totalSize = progress.totalSize;
         currentSize = progress.currentSize;
@@ -166,6 +171,13 @@ public class Progress implements Serializable {
 
     public interface Action {
         void call(Progress progress);
+    }
+
+    /**
+     * 更新数据
+     */
+    public void update() {
+        DownloadManager.getInstance().update(this);
     }
 
     public static ContentValues buildContentValues(Progress progress) {
@@ -185,6 +197,7 @@ public class Progress implements Serializable {
         values.put(EXTRA1, IOUtils.toByteArray(progress.extra1));
         values.put(EXTRA2, IOUtils.toByteArray(progress.extra2));
         values.put(EXTRA3, IOUtils.toByteArray(progress.extra3));
+        values.put(FILE_SUFFIX, progress.fileSuffix);
         return values;
     }
 
@@ -216,6 +229,7 @@ public class Progress implements Serializable {
         progress.extra1 = (Serializable) IOUtils.toObject(cursor.getBlob(cursor.getColumnIndex(Progress.EXTRA1)));
         progress.extra2 = (Serializable) IOUtils.toObject(cursor.getBlob(cursor.getColumnIndex(Progress.EXTRA2)));
         progress.extra3 = (Serializable) IOUtils.toObject(cursor.getBlob(cursor.getColumnIndex(Progress.EXTRA3)));
+        progress.fileSuffix = cursor.getString(cursor.getColumnIndex(Progress.FILE_SUFFIX));
         return progress;
     }
 
@@ -237,17 +251,18 @@ public class Progress implements Serializable {
     @Override
     public String toString() {
         return "Progress{" +//
-               "fraction=" + fraction +//
-               ", totalSize=" + totalSize +//
-               ", currentSize=" + currentSize +//
-               ", speed=" + speed +//
-               ", status=" + status +//
-               ", priority=" + priority +//
-               ", folder=" + folder +//
-               ", filePath=" + filePath +//
-               ", fileName=" + fileName +//
-               ", tag=" + tag +//
-               ", url=" + url +//
-               '}';
+                "fraction=" + fraction +//
+                ", totalSize=" + totalSize +//
+                ", currentSize=" + currentSize +//
+                ", speed=" + speed +//
+                ", status=" + status +//
+                ", priority=" + priority +//
+                ", folder=" + folder +//
+                ", filePath=" + filePath +//
+                ", fileName=" + fileName +//
+                ", fileSuffix=" + fileSuffix +//
+                ", tag=" + tag +//
+                ", url=" + url +//
+                '}';
     }
 }
