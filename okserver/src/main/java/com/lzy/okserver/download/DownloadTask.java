@@ -127,6 +127,11 @@ public class DownloadTask implements Runnable {
         return this;
     }
 
+    public DownloadTask fileSuffix(String fileSuffix){
+        progress.fileSuffix = fileSuffix;
+        return  this;
+    }
+
     public DownloadTask save() {
         if (!TextUtils.isEmpty(progress.folder) && !TextUtils.isEmpty(progress.fileName)) {
             progress.filePath = new File(progress.folder, progress.fileName).getAbsolutePath();
