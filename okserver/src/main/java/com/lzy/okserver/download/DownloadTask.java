@@ -107,6 +107,15 @@ public class DownloadTask implements Runnable {
         return this;
     }
 
+    public DownloadTask tempFileName(String tempFileName) {
+        if (tempFileName != null && !TextUtils.isEmpty(tempFileName.trim())) {
+            progress.tempFileName = tempFileName;
+        } else {
+            OkLogger.w("tempFileName is null, ignored!");
+        }
+        return this;
+    }
+
     public DownloadTask priority(int priority) {
         progress.priority = priority;
         return this;
@@ -315,12 +324,20 @@ public class DownloadTask implements Runnable {
         }
 
         //create and check file
+        String downloadFileName = progress.tempFileName;
+        if (TextUtils.isEmpty(downloadFileName)){
+            downloadFileName = fileName;
+        }
         File file;
         if (TextUtils.isEmpty(progress.filePath)) {
-            file = new File(progress.folder, fileName);
+            file = new File(progress.folder, progress.fileName);
             progress.filePath = file.getAbsolutePath();
         } else {
             file = new File(progress.filePath);
+        }
+        // 如果有临时文件，那么，用临时文件作为下载文件
+        if (!TextUtils.isEmpty(progress.tempFileName)){
+            file = new File(file.getParent(),progress.tempFileName);
         }
         if (startPosition > 0 && !file.exists()) {
             postOnError(progress, OkGoException.BREAKPOINT_EXPIRED());
@@ -335,7 +352,14 @@ public class DownloadTask implements Runnable {
         }
         if (startPosition == progress.totalSize && startPosition > 0) {
             if (file.exists() && startPosition == file.length()) {
-                postOnFinish(progress, file);
+                // 下载完成，改名字
+                if (!TextUtils.isEmpty(progress.tempFileName)) {
+                    File disFile = new File(file.getParent(),progress.fileName);
+                    file.renameTo(disFile);
+                    postOnFinish(progress,disFile);
+                }else {
+                    postOnFinish(progress, file);
+                }
             } else {
                 postOnError(progress, OkGoException.BREAKPOINT_EXPIRED());
             }
@@ -363,7 +387,14 @@ public class DownloadTask implements Runnable {
             postPause(progress);
         } else if (progress.status == Progress.LOADING) {
             if (file.length() == progress.totalSize) {
-                postOnFinish(progress, file);
+                // 下载完成，更改名字
+                if (!TextUtils.isEmpty(progress.tempFileName)) {
+                    File disFile = new File(file.getParent(),progress.fileName);
+                    file.renameTo(disFile);
+                    postOnFinish(progress,disFile);
+                }else {
+                    postOnFinish(progress, file);
+                }
             } else {
                 postOnError(progress, OkGoException.BREAKPOINT_EXPIRED());
             }

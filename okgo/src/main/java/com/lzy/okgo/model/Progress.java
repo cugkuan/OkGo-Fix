@@ -25,8 +25,6 @@ import com.lzy.okgo.request.base.Request;
 import com.lzy.okgo.utils.IOUtils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * ================================================
@@ -69,6 +67,8 @@ public class Progress implements Serializable {
     public static final String EXTRA2 = "extra2";
     public static final String EXTRA3 = "extra3";
     public static final String FILE_SUFFIX = "fileSuffix";
+    // 下载中的文件名，下载成功替换成新文件名
+    public static final String TEMP_FILENAME = "tempFileName";
 
     public String tag;                              //下载的标识键
     public String url;                              //网址
@@ -87,6 +87,7 @@ public class Progress implements Serializable {
     public Serializable extra2;                     //额外的数据
     public Serializable extra3;                     //额外的数据
     public String fileSuffix;                       // 文件的后缀名字，下载的文件可能和使用的文件名字不一样，使用的文件，需要文件名+后缀
+    public String tempFileName;                 // 下载中的文件名字，下载成功后，更改为正式文件名
 
     public Throwable exception;                     //当前进度出现的异常
     private transient long tempSize;                //每一小段时间间隔的网络流量
@@ -198,6 +199,7 @@ public class Progress implements Serializable {
         values.put(EXTRA2, IOUtils.toByteArray(progress.extra2));
         values.put(EXTRA3, IOUtils.toByteArray(progress.extra3));
         values.put(FILE_SUFFIX, progress.fileSuffix);
+        values.put(TEMP_FILENAME,progress.tempFileName);
         return values;
     }
 
@@ -230,6 +232,7 @@ public class Progress implements Serializable {
         progress.extra2 = (Serializable) IOUtils.toObject(cursor.getBlob(cursor.getColumnIndex(Progress.EXTRA2)));
         progress.extra3 = (Serializable) IOUtils.toObject(cursor.getBlob(cursor.getColumnIndex(Progress.EXTRA3)));
         progress.fileSuffix = cursor.getString(cursor.getColumnIndex(Progress.FILE_SUFFIX));
+        progress.tempFileName = cursor.getString(cursor.getColumnIndex(Progress.TEMP_FILENAME));
         return progress;
     }
 
@@ -261,6 +264,7 @@ public class Progress implements Serializable {
                 ", filePath=" + filePath +//
                 ", fileName=" + fileName +//
                 ", fileSuffix=" + fileSuffix +//
+                ", tempFileName=" + tempFileName +//
                 ", tag=" + tag +//
                 ", url=" + url +//
                 '}';

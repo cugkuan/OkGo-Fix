@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
 class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_CACHE_NAME = "okgo.db";
-    private static final int DB_CACHE_VERSION = 2;
+    private static final int DB_CACHE_VERSION = 3;
     static final String TABLE_CACHE = "cache";
     static final String TABLE_COOKIE = "cookie";
     static final String TABLE_DOWNLOAD = "download";
@@ -84,7 +84,8 @@ class DBHelper extends SQLiteOpenHelper {
                 .addColumn(new ColumnEntity(Progress.EXTRA1, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA2, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA3, "BLOB"))
-                .addColumn(new ColumnEntity(Progress.FILE_SUFFIX, "VARCHAR"));
+                .addColumn(new ColumnEntity(Progress.FILE_SUFFIX, "VARCHAR"))
+                .addColumn(new ColumnEntity(Progress.TEMP_FILENAME,"VARCHAR"));
 
         uploadTableEntity.addColumn(new ColumnEntity(Progress.TAG, "VARCHAR", true, true))//
                 .addColumn(new ColumnEntity(Progress.URL, "VARCHAR"))//
@@ -101,7 +102,8 @@ class DBHelper extends SQLiteOpenHelper {
                 .addColumn(new ColumnEntity(Progress.EXTRA1, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA2, "BLOB"))//
                 .addColumn(new ColumnEntity(Progress.EXTRA3, "BLOB"))
-                .addColumn(new ColumnEntity(Progress.FILE_SUFFIX, "VARCHAR"));
+                .addColumn(new ColumnEntity(Progress.FILE_SUFFIX, "VARCHAR"))
+                .addColumn(new ColumnEntity(Progress.TEMP_FILENAME,"VARCHAR"));
     }
 
     @Override
@@ -116,12 +118,27 @@ class DBHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
         // progress 新增了一个字段,file_suffix
-        if (newVersion == 2 && oldVersion == 1) {
+        // progress 新增了一个字段，temp_name
+
+        if (newVersion == 3 && oldVersion == 1) {
+
+            // sqlLite 不支持 同时加入多个值
             String sqlDownload = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_DOWNLOAD,Progress.FILE_SUFFIX);
             db.execSQL(sqlDownload);
             String sqlUpload = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_UPLOAD,Progress.FILE_SUFFIX);
             db.execSQL(sqlUpload);
-        }else {
+
+            String sqlDownload2 = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_DOWNLOAD,Progress.TEMP_FILENAME);
+            db.execSQL(sqlDownload2);
+            String sqlUpload2 = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_UPLOAD,Progress.TEMP_FILENAME);
+            db.execSQL(sqlUpload2);
+
+        } if (newVersion == 3 && oldVersion == 2 ) {
+            String sqlDownload = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_DOWNLOAD,Progress.TEMP_FILENAME);
+            db.execSQL(sqlDownload);
+            String sqlUpload = String.format("ALTER TABLE %s ADD COLUMN %s VARCHAR",TABLE_UPLOAD,Progress.TEMP_FILENAME);
+            db.execSQL(sqlUpload);
+        }  else  {
             if (DBUtils.isNeedUpgradeTable(db, cacheTableEntity))
                 db.execSQL("DROP TABLE IF EXISTS " + TABLE_CACHE);
             if (DBUtils.isNeedUpgradeTable(db, cookieTableEntity))
