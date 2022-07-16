@@ -136,9 +136,9 @@ public class DownloadTask implements Runnable {
         return this;
     }
 
-    public DownloadTask fileSuffix(String fileSuffix){
+    public DownloadTask fileSuffix(String fileSuffix) {
         progress.fileSuffix = fileSuffix;
-        return  this;
+        return this;
     }
 
     public DownloadTask save() {
@@ -181,7 +181,7 @@ public class DownloadTask implements Runnable {
             } else {
                 File file = new File(progress.filePath);
                 if (!file.exists() && !TextUtils.isEmpty(progress.fileSuffix)) {
-                    file = new File(file.getParent(), progress.fileName+ progress.fileSuffix);
+                    file = new File(file.getParent(), progress.fileName + progress.fileSuffix);
                 }
                 if (file.exists() && file.length() == progress.totalSize) {
                     postOnFinish(progress, new File(progress.filePath));
@@ -198,7 +198,7 @@ public class DownloadTask implements Runnable {
         pause();
         // 注意，临时文件也要删除
         IOUtils.delFileOrFolder(progress.filePath);
-        IOUtils.delFileOrFolder(new File(progress.folder,progress.tempFileName).getAbsoluteFile());
+        IOUtils.delFileOrFolder(new File(progress.folder, progress.tempFileName).getAbsoluteFile());
         progress.status = Progress.NONE;
         progress.currentSize = 0;
         progress.fraction = 0;
@@ -236,7 +236,7 @@ public class DownloadTask implements Runnable {
         pause();
         if (isDeleteFile) {
             IOUtils.delFileOrFolder(progress.filePath);
-            IOUtils.delFileOrFolder(new File(progress.folder,progress.tempFileName).getAbsoluteFile());
+            IOUtils.delFileOrFolder(new File(progress.folder, progress.tempFileName).getAbsoluteFile());
         }
         DownloadManager.getInstance().delete(progress.tag);
         DownloadTask task = OkDownload.getInstance().removeTask(progress.tag);
@@ -250,20 +250,26 @@ public class DownloadTask implements Runnable {
         //check breakpoint
         long startPosition = progress.currentSize;
         if (startPosition < 0) {
-            postOnError(progress, OkGoException.BREAKPOINT_EXPIRED());
-            return;
+            progress.speed = 0;
+            progress.status = Progress.NONE;
+            progress.currentSize = 0;
+            startPosition = 0;
+            updateDatabase(progress);
         }
         if (startPosition > 0) {
             if (!TextUtils.isEmpty(progress.filePath)) {
                 File file;
-                if (!TextUtils.isEmpty(progress.tempFileName)){
-                    file = new File(progress.folder,progress.tempFileName);
-                }else {
+                if (!TextUtils.isEmpty(progress.tempFileName)) {
+                    file = new File(progress.folder, progress.tempFileName);
+                } else {
                     file = new File(progress.filePath);
                 }
                 if (!file.exists()) {
-                    postOnError(progress, OkGoException.BREAKPOINT_NOT_EXIST());
-                    return;
+                    progress.speed = 0;
+                    progress.status = Progress.NONE;
+                    progress.currentSize = 0;
+                    startPosition = 0;
+                    updateDatabase(progress);
                 }
             }
         }
@@ -342,9 +348,9 @@ public class DownloadTask implements Runnable {
 
         File downloadFile;
         // 如果有临时文件，那么，用临时文件作为下载文件
-        if (!TextUtils.isEmpty(progress.tempFileName)){
-            downloadFile = new File(progress.folder,progress.tempFileName);
-        }else {
+        if (!TextUtils.isEmpty(progress.tempFileName)) {
+            downloadFile = new File(progress.folder, progress.tempFileName);
+        } else {
             downloadFile = new File(progress.filePath);
         }
         if (startPosition > 0 && !downloadFile.exists()) {
@@ -364,8 +370,8 @@ public class DownloadTask implements Runnable {
                 if (!TextUtils.isEmpty(progress.tempFileName)) {
                     File disFile = new File(progress.filePath);
                     downloadFile.renameTo(disFile);
-                    postOnFinish(progress,disFile);
-                }else {
+                    postOnFinish(progress, disFile);
+                } else {
                     postOnFinish(progress, downloadFile);
                 }
             } else {
@@ -399,8 +405,8 @@ public class DownloadTask implements Runnable {
                 if (!TextUtils.isEmpty(progress.tempFileName)) {
                     File disFile = new File(progress.filePath);
                     downloadFile.renameTo(disFile);
-                    postOnFinish(progress,disFile);
-                }else {
+                    postOnFinish(progress, disFile);
+                } else {
                     postOnFinish(progress, downloadFile);
                 }
             } else {
