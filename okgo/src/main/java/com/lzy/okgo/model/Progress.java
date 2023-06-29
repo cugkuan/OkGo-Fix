@@ -99,7 +99,7 @@ public class Progress implements Serializable {
      */
     private transient long[] speedBuffer;
     private int bufferSize = 0;
-    private int bufferIndex = 0;
+    private byte bufferIndex = 0;
 
 
     public Progress() {
@@ -141,16 +141,14 @@ public class Progress implements Serializable {
      * 平滑网速，避免抖动过大
      */
     private long bufferSpeed(long speed) {
-
-        speedBuffer[bufferIndex] = speed;
-        bufferIndex++;
         if (bufferIndex >= SPEED_BUFFER_SIZE) {
             bufferIndex = 0;
         }
+        speedBuffer[bufferIndex] = speed;
+        bufferIndex++;
         if (bufferSize < SPEED_BUFFER_SIZE) {
             bufferSize++;
         }
-
         long sum = 0;
         for (float speedTemp : speedBuffer) {
             sum += speedTemp;
@@ -199,7 +197,7 @@ public class Progress implements Serializable {
         values.put(EXTRA2, IOUtils.toByteArray(progress.extra2));
         values.put(EXTRA3, IOUtils.toByteArray(progress.extra3));
         values.put(FILE_SUFFIX, progress.fileSuffix);
-        values.put(TEMP_FILENAME,progress.tempFileName);
+        values.put(TEMP_FILENAME, progress.tempFileName);
         return values;
     }
 
