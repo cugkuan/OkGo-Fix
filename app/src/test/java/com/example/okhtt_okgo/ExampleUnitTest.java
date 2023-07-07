@@ -20,10 +20,11 @@ public class ExampleUnitTest {
 
     @Test
     public void test() throws IOException {
-        File file = new File("","a");
-        if (!file.exists()){
-            file.createNewFile();
-        }
-        file.renameTo(new File(file.getParent(),"a"));
+
+        byte a = (byte)256;
+
+        System.out.println(a);
+        System.out.println(a+(byte)1);
+
     }
 }

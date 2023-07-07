@@ -99,7 +99,7 @@ public class Progress implements Serializable {
      */
     private transient long[] speedBuffer;
     private int bufferSize = 0;
-    private byte bufferIndex = 0;
+    private byte bufferIndex;
 
 
     public Progress() {
@@ -141,11 +141,8 @@ public class Progress implements Serializable {
      * 平滑网速，避免抖动过大
      */
     private long bufferSpeed(long speed) {
-        if (bufferIndex >= SPEED_BUFFER_SIZE) {
-            bufferIndex = 0;
-        }
-        speedBuffer[bufferIndex] = speed;
-        bufferIndex++;
+
+        speedBuffer[(bufferIndex++ & 0xff)% SPEED_BUFFER_SIZE] = speed;
         if (bufferSize < SPEED_BUFFER_SIZE) {
             bufferSize++;
         }
