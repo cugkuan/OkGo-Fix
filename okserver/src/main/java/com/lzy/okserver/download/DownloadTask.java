@@ -17,6 +17,7 @@ package com.lzy.okserver.download;
 
 import android.content.ContentValues;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 
 import com.lzy.okgo.db.DownloadManager;
 import com.lzy.okgo.exception.HttpException;
@@ -86,7 +87,7 @@ public class DownloadTask implements Runnable {
         HttpUtils.checkNotNull(progress, "progress == null");
         this.progress = progress;
         executor = OkDownload.getInstance().getThreadPool().getExecutor();
-        listeners = new HashMap<>();
+        listeners = new ArrayMap<>();
     }
 
     public DownloadTask folder(String folder) {
@@ -151,19 +152,25 @@ public class DownloadTask implements Runnable {
 
     public DownloadTask register(DownloadListener listener) {
         if (listener != null) {
-            listeners.put(listener.tag, listener);
+            HttpUtils.runOnUiThread(() -> {
+                listeners.put(listener.tag, listener);
+            });
         }
         return this;
     }
 
     public void unRegister(DownloadListener listener) {
         HttpUtils.checkNotNull(listener, "listener == null");
-        listeners.remove(listener.tag);
+        HttpUtils.runOnUiThread(() -> {
+            listeners.remove(listener.tag);
+        });
     }
 
     public void unRegister(String tag) {
         HttpUtils.checkNotNull(tag, "tag == null");
-        listeners.remove(tag);
+        HttpUtils.runOnUiThread(() -> {
+            listeners.remove(tag);
+        });
     }
 
     public void start() {
